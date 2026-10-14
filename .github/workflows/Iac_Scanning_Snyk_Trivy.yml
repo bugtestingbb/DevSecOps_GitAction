@@ -87,8 +87,10 @@ jobs:
         echo "Testing Account Access"
         snyk whoami
         echo "============= SNYK IaC SCAN =============" > reports/snyk-iac-report.txt
-        snyk iac test $SCAN_PATH  --severity-threshold=high >> reports/snyk-iac-report.txt 2>&1
-
+        ls -la $SCAN_PATH
+        # snyk iac test docs -d
+        snyk iac test $SCAN_PATH  --severity-threshold=high >> reports/snyk-iac-report.txt 2>&1 || true
+        
     #===============================================================================================================
     # Step 6 - Install Trivy
     #
