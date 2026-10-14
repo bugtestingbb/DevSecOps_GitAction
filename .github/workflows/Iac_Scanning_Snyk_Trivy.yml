@@ -51,9 +51,12 @@ jobs:
     #
     # All output reports will be stored here
     #####################################################################
-    - name: Create Report Folder
+    - name: Create Report Folder and List Docs files
       run: |
         mkdir -p reports
+        ls -al reports
+        echo "List Docs Folders"
+        ls $SCAN_PATH -al 
 
     #####################################################################
     # Step 5 - Run Snyk IaC Scan
