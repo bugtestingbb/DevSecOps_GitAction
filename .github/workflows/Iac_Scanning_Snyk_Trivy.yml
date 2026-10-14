@@ -106,8 +106,8 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install wget -y
-        wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.67.2_Linux-64bit.deb
-        sudo dpkg -i trivy_0.67.2_Linux-64bit.deb
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.76.0_Linux-64bit.deb
         trivy --version
     #####################################################################
     # Step 7 - Run Trivy IaC Scan
