@@ -87,26 +87,27 @@ jobs:
         echo "Testing Account Access"
         snyk whoami
         echo "============= SNYK IaC SCAN =============" > reports/snyk-iac-report.txt
-        ls -la $SCAN_PATH
-        # snyk iac test docs -d
-        snyk iac test $SCAN_PATH  --severity-threshold=high >> reports/snyk-iac-report.txt 2>&1 || true
+        #snyk iac test $SCAN_PATH  --severity-threshold=high >> reports/snyk-iac-report.txt 2>&1 || true
+        #
+        snyk iac test $SCAN_PATH  --severity-threshold=high  --report >> reports/snyk-iac-report.txt 2>&1 || true
         # snyk monitor  => For Monitoring in Snyk Dashboard all vulnerabilties
+        
     #===============================================================================================================
-    # Step 6 - Install Trivy
-    #
-    # Trivy is an open-source scanner by Aqua Security
-    #
-    # It can scan:
-    # - Containers
-    # - Filesystems
-    # - IaC
-    # - Secrets
-    #
-    # trivy config docs
-    #   => Scan Terraform / K8s / YAML / IaC files
-    #
-    # --severity HIGH,CRITICAL
-    #   => Report only High & Critical findings
+        # Step 6 - Install Trivy
+        #
+        # Trivy is an open-source scanner by Aqua Security
+        #
+        # It can scan:
+        # - Containers
+        # - Filesystems
+        # - IaC
+        # - Secrets
+        #
+        # trivy config docs
+        #   => Scan Terraform / K8s / YAML / IaC files
+        #
+        # --severity HIGH,CRITICAL
+        #   => Report only High & Critical findings
     #####################################################################
     - name: Install Trivy as CLI
       run: |
@@ -122,12 +123,12 @@ jobs:
       continue-on-error: true
       run: |
         echo "============= TRIVY IaC SCAN =============" > reports/trivy-iac-report.txt
-   #     trivy config $SCAN_PATH --severity HIGH,CRITICAL >> reports/trivy-iac-report.txt 2>&1
+        trivy config $SCAN_PATH --severity HIGH,CRITICAL >> reports/trivy-iac-report.txt 2>&1
 
     #####################################################################
-    - name: Run Trivy using Docker
-      run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace aquasec/trivy:latest config /workspace/docs --severity HIGH,CRITICAL > reports/trivy-iac-report.txt
+#    - name: Run Trivy using Docker
+#      run: |
+#        docker run --rm -v ${{ github.workspace }}:/workspace aquasec/trivy:latest config /workspace/docs --severity HIGH,CRITICAL > reports/trivy-iac-report.txt
 
     #####################################################################
     # Step 8 - Upload Snyk Report
