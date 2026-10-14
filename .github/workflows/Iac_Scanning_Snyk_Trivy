@@ -1,0 +1,166 @@
+name: IaC Security Scan - Snyk + Trivy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCAN_PATH: docs
+
+jobs:
+  iac_security_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    #####################################################################
+    # Step 1 - Checkout source code from GitHub repository
+    #####################################################################
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    #####################################################################
+    # Step 2 - Install NodeJS
+    # Required because Snyk CLI is distributed through NPM
+    #####################################################################
+    - name: Setup NodeJS
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    #####################################################################
+    # Step 3 - Install Snyk CLI
+    #
+    # Snyk CLI is used for:
+    # - IaC Scanning
+    # - SCA Scanning
+    # - SAST Scanning
+    #
+    # In this workflow we are only using:
+    # snyk iac test
+    #####################################################################
+    - name: Install Snyk CLI
+      run: |
+        npm install -g snyk
+        snyk --version
+
+    #####################################################################
+    # Step 4 - Create report folder
+    #
+    # All output reports will be stored here
+    #####################################################################
+    - name: Create Report Folder
+      run: |
+        mkdir -p reports
+
+    #####################################################################
+    # Step 5 - Run Snyk IaC Scan
+    #
+    # Command Explanation:
+    #
+    # snyk iac test
+    #   => Performs Infrastructure as Code scan
+    #
+    # docs
+    #   => Folder to scan
+    #
+    # --severity-threshold=high
+    #   => Only High/Critical findings fail pipeline
+    #
+    # > reports/snyk-iac-report.txt
+    #   => Store output in Text file
+    #
+    #####################################################################
+    - name: Run Snyk IaC Scan
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      continue-on-error: true
+      run: |
+        echo "============= SNYK IaC SCAN =============" > reports/snyk-iac-report.txt
+        snyk iac test $SCAN_PATH  --severity-threshold=high >> reports/snyk-iac-report.txt 2>&1
+
+    
+    ##########################################################################################################################################
+    # Step 6 - Install Trivy
+    #
+    # Trivy is an open-source scanner by Aqua Security
+    #
+    # It can scan:
+    # - Containers
+    # - Filesystems
+    # - IaC
+    # - Secrets
+    #####################################################################
+   # - name: Install Trivy
+   #   run: |
+   #     sudo apt-get update
+   #     sudo apt-get install wget -y
+   #     wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.67.2_Linux-64bit.deb
+   #     sudo dpkg -i trivy_0.67.2_Linux-64bit.deb
+   #     trivy --version
+
+    #####################################################################
+    # Step 7 - Run Trivy IaC Scan
+    #
+    # Command Explanation:
+    #
+    # trivy config docs
+    #   => Scan Terraform / K8s / YAML / IaC files
+    #
+    # --severity HIGH,CRITICAL
+    #   => Report only High & Critical findings
+    #
+    #####################################################################
+    - name: Run Trivy IaC Scan
+      continue-on-error: true
+      run: |
+        echo "============= TRIVY IaC SCAN =============" > reports/trivy-iac-report.txt
+        trivy config $SCAN_PATH --severity HIGH,CRITICAL >> reports/trivy-iac-report.txt 2>&1
+
+  #  - name: Run Trivy using Docker
+  #    run: |
+  #      docker run --rm -v ${{ github.workspace }}:/workspace aquasec/trivy:latest config /workspace/docs --severity HIGH,CRITICAL > reports/trivy-iac-report.txt
+
+    #####################################################################
+    # Step 8 - Upload Snyk Report
+    #####################################################################
+    - name: Upload Snyk Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: snyk-iac-report
+        path: reports/snyk-iac-report.txt
+
+    #####################################################################
+    # Step 9 - Upload Trivy Report
+    #####################################################################
+    - name: Upload Trivy Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-iac-report
+        path: reports/trivy-iac-report.txt
+
+    #####################################################################
+    # Step 10 - Upload Combined Reports
+    #####################################################################
+    - name: Upload All Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: iac-security-reports
+        path: reports/
+
+    #####################################################################
+    # Step 11 - Security Gate
+    #
+    # Pipeline will fail if Trivy OR Snyk detects
+    # High / Critical findings.
+    #####################################################################
+    - name: Security Gate
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      run: |
+        echo "Running final security validation..."
+        snyk iac test $SCAN_PATH --severity-threshold=high
+        trivy config $SCAN_PATH  --severity HIGH,CRITICAL --exit-code 1
+        echo "Security Gate Passed"
