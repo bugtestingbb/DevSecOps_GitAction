@@ -8,10 +8,10 @@
 name: DAST AI — DevSecOps Gate
 
 on:
-  pull_request:
-    branches: [main, master,maitreyrbhatt-patch-1, hotfix/**, release/**]
-  push:
-    branches: [main, master,maitreyrbhatt-patch-1]
+#  pull_request:
+#   branches: [main, master,maitreyrbhatt-patch-1, hotfix/**, release/**]
+#  push:
+#   branches: [main, master,maitreyrbhatt-patch-1]
 
 jobs:
   security-gate:
